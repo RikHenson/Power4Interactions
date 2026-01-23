@@ -1,8 +1,11 @@
 ---
 title: "Power for Interactions"
-author: "Rik Henson, rik.henson@mrc-cbu.cam.ac.uk. Please report any errors or confusions (sure there are some!)"
+author: "Rik Henson, rik.henson@mrc-cbu.cam.ac.uk. Please report any errors or confusions
+  (sure there are some!)"
 date: "2023-08-19"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -19,7 +22,7 @@ In a MLR with two independent variables (regressors) X and Z predicting the depe
 Y ~ Bx*X + Bz*Z + Bxz*(X*Z) + E
 ``
 
-where ``Y``, ``X`` and ``Z`` are vectors, ``Bx``, ``Bz`` and ``Bxz`` are parameters (scalars), ``*`` is the element-wise product, and ``E`` is a vector of residuals. We'll label the interaction term as XZ.
+where ``Y``, ``X`` and ``Z`` are vectors, ``Bx``, ``Bz`` and ``Bxz`` are parameters (scalars), ``*`` is the element-wise product, and ``E`` is a vector of residuals. We'll refer to the interaction term as XZ.
 
 This paper [McClelland & Judd 1993](https://www.researchgate.net/publication/14783346_Statistical_difficulties_of_detecting_interaction_and_moderator_effects) argues that moderation effects are difficult to detect. It makes a useful distinction between "experimental" and "field" studies. Experimental studies are assumed to manipulate (often extreme) values of X and Z, represented here as 2 levels of each factor (i.e categorical variables, indicated using dummy variables with values [0,1] in the regressors). Field studies, on the other hand, measure continuous values of X and Z. Below I simulate both types, and argue that interactions are in principle just as detectable as main effects for experimental studies, and can be less or more detectable than main effects in field studies, depending on the range (spread) of X and Z, the correlation between them, and the presence of any error in measuring X and Z.
 
@@ -27,15 +30,15 @@ Before simulating, here are some other possible reasons for a difficulty in dete
 
 1. It may be an empirical fact that interactions between the types of variables measured in many studies have a smaller effect size than the main effect of those variables. Or there may be theoretical reasons why the interaction could only be ordinal rather than disordinal (cross-over) (see [Lakens Blog](http://daniellakens.blogspot.com/2020/03/effect-sizes-and-power-for-interactions.html)), in which case the effect size might be half that for the main effects. Here however we consider the case when there is no such empirical or a priori knowledge, i.e, when effect sizes for X, Z and XZ are equal (ie ``Bx=Bz=Bxz=1``). 
 
-2. The addition of the interaction term to the MLR model eats an additional degree of freedom (df). This is true, but it is strange to not include it, unless we have a priori reason not to expect an interaction, and in any case, its effect on statistical power is negligible (compared to tests of main effects) if we have enough data, as here.
+2. The addition of the interaction term to the MLR model eats an additional degree of freedom (df). This is true, but it is strange to not model the interaction, regardless of whether we care about it, unless we have a priori reason not to expect an interaction. More importantly, its effect on statistical power is negligible (compared to tests of main effects) if we have enough data, as here.
 
-3. It is important to mean-correct X and Z before multiplying them in equation above, otherwise the interaction term XZ will be more correlated with X and Z (if one or both have non-zero mean), i.e, the interaction and main effects will be confounded. (Note interaction terms are orthogonal to main effects in experimental studies, by design; note also that this is a type of "orthogonalisation" that I question below for field studies, but in this case, we very rarely care about the mean of any regressor in a MLR).
+3. It is important to mean-correct X and Z before multiplying them in equation above, otherwise the interaction term XZ will be more correlated with X and Z (if one or both have non-zero mean), i.e, the interaction and main effects will be confounded. (Note interaction terms are orthogonal to main effects in experimental studies, by design; note also that this is a type of "orthogonalisation" that I question below for field studies).
 
-4. Sometimes people think they have low power to detect "interactions" because they have fewer values per cell when they break down the data according to the specific levels of two or more factors. However, this really refers to the power to detect the "simple effects" on subsets of the data, for example to interpret what is driving an overall interaction; here we only consider the omnibus interaction involving all the data.
+4. Sometimes people think they have low power to detect "interactions" because they have fewer values per cell when they break down the data according to the specific levels of two or more factors. However, this really refers to the power to detect the "simple effects" on subsets of the data, for example to interpret what is driving an overall interaction; here we only consider the omnibus interaction that involves all the data.
 
 5. Sometimes people say (for experimental studies) that taking differences of random samples reduces the signal-to-noise ratio (SNR). This is true if the mean of two independent samples have the same sign, because signal will be decreased by subtraction but noise will be increased. Hence one might think that interactions, as differences of differences, would have even lower SNR. However, interactions are no different from main effects in this sense, since both involve taking differences and averages across conditions (i.e., in a 2x2 design, the contrasts for the two main effects across four conditions might be [1 1 -1 -1] and [1 -1 1 -1], in which case the interaction would be [1 -1 -1 1], all of which involve the same amount of subtraction/averaging, as code below demonstrates).
 
-6. There has been research looking at the effect of "range restriction" on power to detect interactions in MLR (e.g., [Aguinis & Stone-Romero 1997](https://www.researchgate.net/publication/287633867_Methodological_artifacts_in_moderated_multiple_regression_and_their_effects_on_statistical_power)), for example where participants are only selected for a study if they score above some criterion on one variable, eg X. This clearly reduces the range of the interaction term too, which of course reduces its power, but here we assume no such range restriction.
+6. There has been research looking at the effect of "range restriction" on power to detect interactions in MLR (e.g., [Aguinis & Stone-Romero 1997](https://www.researchgate.net/publication/287633867_Methodological_artifacts_in_moderated_multiple_regression_and_their_effects_on_statistical_power)), for example where participants are only selected for a study if they score above some criterion on one variable, eg X. This clearly reduces the range of the interaction term too, which of course reduces its power, as shown later, but here we assume no such explicit range restriction.
 
 # Simulations
 
@@ -183,7 +186,7 @@ X = scale(X); Z = scale(Z)
 XZ = X * Z
 ```
 
-(see [Henson, 2015](https://www.mrc-cbu.cam.ac.uk/wp-content/uploads/www/sites/3/2015/03/Henson_EN_15_ANOVA.pdf) if you want more information about the general linear model for factorial designs, eg ANOVAs). Note that the scaling of dummy regressors does matter - they need to be Z-scored (``scale`` in R) so that their mean=0 and SD=1 - on assumption that we do not know the true scaling of the underlying factors being manipulated (or orthonormalised if more than 2 levels per factor). The interaction term is then calculated by the product of Z-scored X and Z regressors (see comment above about mean-correction).
+(see [Henson, 2015](https://www.mrc-cbu.cam.ac.uk/wp-content/uploads/www/sites/3/2015/03/Henson_EN_15_ANOVA.pdf) if you want more information about the general linear model for factorial designs, eg ANOVAs). Note that the scaling of dummy regressors does matter - they need to be Z-scored (``scale`` in R) so that their mean (M)=0 and standard deviation (SD)=1 - on assumption that we do not know the true scaling of the underlying factors being manipulated (or orthonormalised if more than 2 levels per factor). The interaction term is then calculated by the product of Z-scored X and Z regressors (see comment above about mean-correction).
 
 To visualise these regressors together with some example data (with an interaction):
 
@@ -257,7 +260,7 @@ Again, in this example generated with only an interaction, you should be able to
 
 ### Independent variables
 
-To start with, we will assume X and Z have unit variance (sd=1), by setting the ``vX=1`` and ``vZ=1``, and are independent, by setting ``cXZ=0``:
+To start with, we will assume X and Z have unit variance (SD=1), by setting ``vX=1`` and ``vZ=1``, and are independent, by setting ``cXZ=0``:
 
 ```{r independent field observations}
 arg = list(nsim = nsim, nexp = nexp, nsub = nsub, Beta = Beta, nsd = nsd)
@@ -302,13 +305,13 @@ arg$vX = 0.5; arg$vZ = 0.5; arg$cXZ = 0
 plot_bar(pow(arg))
 ```
 
-This is the first time when the interaction has appreciably less power than the main effects. This is simply because the range (sd in this case) of the interaction term is the product of the ranges for both main effects. The smaller the range of a variable, the harder it is to detect in the presence of additive noise. Since the sd's of X and Z (i.e, sqrt(0.5)) are less than 1, the sd of their product (even if not Gaussian) must be even smaller (i.e, 0.5). More generally, the interaction will tend to have less power than a main effect when the product of the sd's of the main effects is less than the sd of that main effect (e.g, when ``vX*vZ < vX`` when comparing to main effect of X). On the other hand, if the sd's of X and Z are greater than 1, then the interaction regressor will have a larger sd than the main effects, and the interaction will therefore have higher power than the main effects!
+This is the first time when the interaction has appreciably less power than the main effects. This is simply because the range of the interaction term is the product of the ranges for both main effects. The smaller the range of a variable, the harder it is to detect in the presence of additive noise. Since the SD's of X and Z (i.e, sqrt(0.5)) are less than 1, the SD of their product (even if not Gaussian) must be even smaller. More generally, the interaction will tend to have less power than a main effect when the product of the SD's of the main effects is less than the SD of that main effect (e.g, when ``vX*vZ < vX`` in the above code, for main effect of X). On the other hand, if the SD's of X and Z are greater than 1, then the interaction regressor will have a larger SD than the main effects, and the interaction will therefore have higher power than the main effects!
 
-So when will the range (e.g. sd) of measured variables be smaller or greater than 1? This is difficult to answer in general, because it depends on whether X and Z are measured with meaningful scales (and that those scales are commensurate across X and Z). If their scales are not meaningful / commensurate, then they are usually standardised (i.e, Z-scored) before entering the MLR, which ensures they have sd=1 and therefore that the interaction will have comparable power (at least when X and Z are independent). Nonetheless, it should be remembered that if X and Z have meaningful scales (and are therefore not standardised), along which they vary little, then their interaction can be more difficult to detect.
+So when will the range (e.g. SD) of measured variables be smaller or greater than 1? This is difficult to answer in general, because it depends on whether X and Z are measured with meaningful scales (and that those scales are commensurate across X and Z). If their scales are not meaningful / commensurate, then they are usually standardised (i.e, Z-scored) before entering the MLR, which ensures they have SD=1 and therefore that the interaction will have comparable power (at least when X and Z are independent). Nonetheless, it should be remembered that if X and Z have meaningful scales (and are therefore not standardised), along which they vary little, then their interaction can be more difficult to detect.
 
 ### Measurement noise (in variables)
 
-Another situation where the interaction has less power is when the variables are not measured exactly, i.e, there is noise in their measurement. Strictly speaking, this is an "errors-in-variables" situation, but in practice such error can be absorbed into the ``lm`` model's single error term. This can be simulated by setting the parameter ``msd>0`` (note that the data are generated in ``gen_dat`` with the true values of X and Z, but then fit in ``pow`` with values of X and Z that have additional Gaussian noise with sd of ``msd``).
+Another situation where the interaction has less power is when the variables are not measured exactly, i.e, there is noise in their measurement. Strictly speaking, this is an "errors-in-variables" situation, but in practice such error can be absorbed into the ``lm`` model's single error term (such errors-in-variables bias parameter estimates but do not affect statistical validity). This can be simulated by setting the parameter ``msd>0`` (note that the data are generated in ``gen_dat`` with the true values of X and Z, but then fit in ``pow`` with values of X and Z that have additional Gaussian noise with SD of ``msd``).
 
 ```{r measurement noise}
 arg = list(nsim = nsim, nexp = nexp, nsub = nsub, Beta = Beta, nsd = nsd)
@@ -317,11 +320,11 @@ arg$nsd = 2; arg$msd = 2 # reduce main noise (nsd) to get power comparable to pr
 plot_bar(pow(arg)) 
 ```
 
-The interaction is now more difficult to detect than the main effects because the measurement noise in X and Z has been amplified simply by their multiplication to create the regressor XZ. Therefore, if one has imperfect measurement of the true variables producing the data, then interactions will suffer in their sensitivity.
+The interaction is now more difficult to detect than the main effects because the measurement noise in X and Z has been amplified, owing to their multiplication to create the regressor XZ. Therefore, if one has imperfect measurement of the true variables producing the data, then interactions will suffer in their sensitivity.
 
 ### Sequential testing
 
-In a final example where the power for detecting an interaction is reduced, we will generate cases where the interaction term is correlated with one or both main effects (even after mean-correction), and where one decides to partition shared variance "sequentially" to each term in the MLR, giving priority to main effects over interactions. This is a situation where the order of regressors matters in a MLR, and arises when interactions appear to "the right of" main effects in the ``lm`` equation. In the ``pow`` function, sequential testing is implemented by using the default ``anova`` function on the lm fit, which uses type I sum of squares, rather than the usual ``summary`` function.
+In a final example where the power for detecting an interaction is reduced, we will generate cases where the interaction term is correlated with one or both main effects (even after mean-correction), and where one decides to partition shared variance "sequentially" (or hierarchically) to each term in the MLR, giving priority to main effects over interactions. In ANOVA terminology, this corresponds to use of type I or type II sum-of-squares, rather than type III sum-of-squares. In the above ``pow`` function, sequential testing is implemented by using the default ``anova`` function on the lm fit, which uses type I sum of squares, rather than the usual ``summary`` function (which effectively uses type III sum-of-squares).
 
 We will also take this opportunity to illustrate a final option of passing user-specified regressors directly to ``pow`` via the ``arg$R`` parameter. Here we will generate a uniform distribution for X, and make Z a squared version of X (before mean-correcting X). Both will be standardised before entering the MLR, to ensure their range is equivalent, but the lack of mean-correction of X prior to its squaring ensures that X is highly correlated with Z. The product XZ is then also correlated with both main effects, as can be seen here:
 
@@ -338,18 +341,18 @@ arg$nsd=1
 plot_bar(pow(arg)) 
 ```
 
-However, when we apply sequential testing (effectively orthogonalising each term with respect to all terms to the left of it), the interaction now has least relative power:
+However, when we apply sequential testing (effectively orthogonalising each term with respect to all terms to the left of it, ie type I sum-of-squares), the interaction now has least relative power:
 
 ```{r sequential testing}
 arg$seqTest = 1;
 plot_bar(pow(arg)) 
 ```
 
-Note however that the power for the interaction has NOT decreased relative to the previous example; it is just the power for the main effects that have increased. By orthogonalising the interaction with respect to the main effects, one is assigning the common variance to the main effects (the unique variance explained by the interaction does not change).
+(the same would be true of type II hierachical sum-of-squares). Note however that the power for the interaction has NOT decreased relative to the previous example; it is just the power for the main effects that have increased. By orthogonalising the interaction with respect to the main effects, one is assigning the common variance to the main effects (the unique variance explained by the interaction does not change).
 
-Nonetheless, there must always be an a priori reason to orthogonalise one regressor with respect to others in MLR (i.e, effectively assigning the shared variance to the other regressors). One could argue that main effects always have priority over interactions, like [Cohen, 1978](https://psycnet.apa.org/record/1979-25147-001), but more generally, one could argue that this depends on domain-specific knowledge, and in principle interactions are as interesting as main effects.
+In general, there must always be an a priori reason to orthogonalise one regressor with respect to others in MLR (i.e, effectively assigning the shared variance to the other regressors). One could argue that main effects always have priority over interactions, like [Cohen, 1978](https://psycnet.apa.org/record/1979-25147-001), but I would argue that this depends on domain-specific knowledge, and in principle interactions are as interesting as main effects.
 
 ## Conclusion
 
-The relative power of interactions versus main effects in multiple linear regression depends on a number of considerations, such as the range of each regressor, the correlation between them, whether there is additional measurement noise in regressor values, and whether significance is assessed with simultaneous or sequential testing. Notwithstanding the caveats mentioned at the start of this piece (e.g, equal effect sizes), I would argue that, in experimental designs, where the scaling of factors is arbitrary (ordinal), and main effects and interactions are orthogonal by design, interactions are equivalent in their power to main effects, assuming all are either measured within- or between-subjects (and when one factor is measured within-subject, the interaction involving that factor gains the same power advantage over between-subject effects). For field designs, with continuous, measured variables, I would argue that interactions still do not *necessarily* have less power, but they can when 1) there is measurement noise in the variables, 2) when the variables have a meaningful scale (such that their standardisation is inappropriate) and their range of values is low, or 3) sequential testing is employed such that interaction terms are effectively de-emphasised by orthogonalising (residualising) them with respect to (correlated) main effects.
+The relative power of interactions versus main effects in multiple linear regression depends on a number of considerations, such as the range of each regressor, the correlation between them, whether there is additional measurement noise in regressor values, and whether significance is assessed with simultaneous or sequential testing. Notwithstanding the caveats mentioned at the start of this piece (e.g, equal effect sizes), I would argue that, in experimental designs, where the scaling of factors is arbitrary (ordinal), and main effects and interactions are orthogonal by design, interactions are equivalent in their power to main effects, assuming all are either measured within- or between-subjects (and when one factor is measured within-subject, the interaction involving that factor gains the same power advantage over between-subject effects). For field designs, with continuous, measured variables, I would argue that interactions still do not *necessarily* have less power, but they can when 1) there is measurement noise in the variables, 2) when the variables have a meaningful scale (such that their standardisation is inappropriate) and their range of values is low, or 3) sequential or hierarchical testing is employed such that interaction terms are explicitly de-emphasised by orthogonalising (residualising) them with respect to (correlated) main effects.
 
